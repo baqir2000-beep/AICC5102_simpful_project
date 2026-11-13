@@ -1,0 +1,335 @@
+AICC5102 Simpful project - combined results
+Date: 2026-11-12 21:15
+Python 3.14.2 on Windows AMD64
+CPU: Intel64 Family 6 Model 142 Stepping 10, GenuineIntel
+simpful 2.12.0
+scikit-fuzzy 0.5.0
+numpy 2.4.4
+matplotlib 3.10.8
+
+Summary
+OK           2.1 s  mamdani.py
+OK           2.1 s  sugeno.py
+OK           5.2 s  sepsis.py
+OK           2.7 s  repressilator.py
+OK          51.5 s  figure4_test.py
+OK          32.1 s  limitation_A_fixed.py
+OK         149.6 s  limitation_A_harder.py
+OK         698.3 s  limitation_B_fixed.py
+OK         170.7 s  limitation_B_skfuzzy.py
+OK           3.2 s  limitation_C_fixed.py
+OK          12.7 s  temperature_control_mamdani.py
+OK          10.1 s  benchmark_sepsis_sugeno.py
+OK         539.3 s  ablation.py
+OK         491.5 s  ablation_mamdani_vs_sugeno.py
+OK          29.2 s  test_fast_mamdani.py
+OK           2.0 s  findings_checks.py
+OK          12.4 s  sepsis_corrected.py
+
+====================================================================================================
+mamdani.py - Reproduction: Listing 1, Mamdani tipping (paper: 14.17)
+Status: OK | run time 2.1 s
+====================================================================================================
+{'Tip': np.float64(14.172236140420813)}
+
+====================================================================================================
+sugeno.py - Reproduction: Listing 2, Sugeno tipping (paper: 14.77)
+Status: OK | run time 2.1 s
+====================================================================================================
+{'Tip': np.float64(14.777777777777779)}
+
+====================================================================================================
+sepsis.py - Reproduction: Listing 3, sepsis (paper: 69.3; figure: results/sepsis_mfs.pdf)
+Status: OK | run time 5.2 s
+====================================================================================================
+{'Sepsis': np.float64(68.90324203600152)}
+
+====================================================================================================
+repressilator.py - Reproduction: Listing 4, repressilator (figure: results/repressilator_dynamics.pdf)
+Status: OK | run time 2.7 s
+====================================================================================================
+
+
+====================================================================================================
+figure4_test.py - Reproduction: Fig. 4, Simpful vs Scikit-Fuzzy surface
+Status: OK | run time 51.5 s
+====================================================================================================
+=== figure4_test.py
+
+Part 1 - Simpful vs Scikit-Fuzzy, 21 x 21 grid (441 inputs)
+Maximum difference: 0.011400
+Mean difference: 0.003558
+
+Part 2 - each method vs the high-resolution reference (same 441 inputs)
+Method | Max error | Mean error
+Simpful (1000 subdivisions) | 1.14e-02 | 3.56e-03
+Scikit-Fuzzy (1001-point universe) | 2.08e-11 | 3.75e-12
+Ours (exact) | 2.08e-11 | 3.74e-12
+If Scikit-Fuzzy's error is much smaller than Simpful's, the Part 1 difference
+comes from Simpful's grid, not from Scikit-Fuzzy.
+Saved results/figure4_difference.csv
+
+====================================================================================================
+limitation_A_fixed.py - Limitation A + fix: accuracy (1 input and 121 inputs)
+Status: OK | run time 32.1 s
+====================================================================================================
+High-resolution reference: 14.167701863357918
+
+Part 1 - input (4, 8); time = mean ± sd over 5 runs of 10 calls
+Method | Result | Error | Time
+Simpful 10 subdivisions | 14.632238 | 0.464536 | 0.228 ± 0.025 ms
+Simpful 100 subdivisions | 14.213601 | 0.045899 | 0.789 ± 0.086 ms
+Simpful 1000 subdivisions | 14.172236 | 0.004534 | 6.588 ± 1.009 ms
+Simpful 10000 subdivisions | 14.168155 | 0.000453 | 63.085 ± 3.421 ms
+Ours (exact) | 14.167702 | 3.88e-12 | 0.620 ± 0.024 ms
+
+Part 2 - 121 inputs (Service, Food = 0..10)
+Method | Max error | Mean error
+Simpful 10 subdivisions | 1.233894 | 0.395378
+Simpful 100 subdivisions | 0.114458 | 0.037716
+Simpful 1000 subdivisions | 0.011400 | 0.003741
+Simpful 10000 subdivisions | 0.001140 | 0.000374
+Ours (exact) | 2.08e-11 | 3.97e-12
+
+====================================================================================================
+limitation_A_harder.py - Limitation A, harder conditions: narrow and Gaussian/sigmoid output sets
+Status: OK | run time 149.6 s
+====================================================================================================
+=== limitation_A_harder.py
+
+Tipping rules and inputs as Listing 1; output sets replaced. 121 inputs (Service, Food = 0..10); reference = 1,000,001-point trapezoidal rule.
+Time at input (4, 8): mean ± sd over 5 runs of 10 calls.
+
+--- narrow (triangles/trapezoid, width 1-3)
+Method | Max error | Mean error | Time at (4, 8)
+Simpful 100 subdivisions | 1.49e-01 | 2.15e-02 | 0.857 ± 0.079 ms
+Simpful 1000 subdivisions | 2.01e-05 | 7.31e-06 | 7.459 ± 0.472 ms
+Simpful 10000 subdivisions | 2.00e-07 | 7.29e-08 | 65.837 ± 4.432 ms
+Ours (exact) | 1.07e-14 | 2.26e-15 | 1.831 ± 0.032 ms
+
+--- gaussian
+Method | Max error | Mean error | Time at (4, 8)
+Simpful 100 subdivisions | 3.04e-02 | 1.23e-02 | 3.429 ± 0.243 ms
+Simpful 1000 subdivisions | 3.00e-03 | 1.20e-03 | 25.293 ± 3.571 ms
+Simpful 10000 subdivisions | 3.01e-04 | 1.19e-04 | 218.637 ± 32.454 ms
+Ours (200,001-point grid) | 6.21e-10 | 1.99e-10 | 32.067 ± 2.232 ms
+
+--- sigmoid (inv. sigmoid / Gaussian / sigmoid)
+Method | Max error | Mean error | Time at (4, 8)
+Simpful 100 subdivisions | 9.01e-02 | 3.57e-02 | 1.414 ± 0.105 ms
+Simpful 1000 subdivisions | 9.00e-03 | 3.57e-03 | 13.482 ± 0.487 ms
+Simpful 10000 subdivisions | 8.99e-04 | 3.57e-04 | 133.961 ± 9.820 ms
+Ours (200,001-point grid) | 3.46e-10 | 1.19e-10 | 38.111 ± 2.079 ms
+
+Note: for Gaussian/sigmoid sets 'Ours' is a fine grid, not exact; its error is bounded by the reference's own accuracy (~1e-9).
+
+====================================================================================================
+limitation_B_fixed.py - Limitation B + fix: speed with 9 to 6561 rules
+Status: OK | run time 698.3 s
+====================================================================================================
+Seeds: 5 | Simpful subdivisions: 1000 | time = mean ± sd over seeds (each seed: warm-up + 3 runs)
+Inputs | Rules | Simpful time | Ours time | Speed-up | Simpful mem | Ours mem | Max |diff|
+----------------------------------------------------------------------------------------------------
+2 | 9 | 21.46 ± 3.97 ms | 0.82 ± 0.14 ms | 26.2x | 0.07 MB | 0.01 MB | 0.0078
+4 | 81 | 166.09 ± 13.09 ms | 0.81 ± 0.22 ms | 206.0x | 0.08 MB | 0.01 MB | 0.0055
+6 | 729 | 1557.10 ± 159.92 ms | 0.85 ± 0.04 ms | 1835.7x | 0.13 MB | 0.01 MB | 0.0032
+8 | 6561 | 13459.31 ± 2868.19 ms | 1.53 ± 0.25 ms | 8782.5x | 0.89 MB | 0.01 MB | 0.0017
+Max |diff| = Simpful's own discretisation error (ours is exact).
+
+====================================================================================================
+limitation_B_skfuzzy.py - Limitation B: Scikit-Fuzzy on the same rule bases
+Status: OK | run time 170.7 s
+====================================================================================================
+=== limitation_B_skfuzzy.py
+
+Seeds: 5 | time = mean ± sd over seeds (each seed: warm-up + 3 runs) | cap 120 s per seed
+Inputs | Rules | Scikit-Fuzzy build | Scikit-Fuzzy time | Ours time | Speed-up (ours vs SKF) | SKF max |error|
+--------------------------------------------------------------------------------------------------------------
+2 | 9 | 0.04 s | 18.43 ± 10.32 ms | 1.19 ± 0.73 ms | 15.5x | 7.76e-06
+4 | 81 | 2.88 s | 158.40 ± 20.11 ms | 0.59 ± 0.03 ms | 268.5x | 2.70e-06
+6 | 729 | > 120 s for seed 1 (build + 4 inferences); size skipped
+8 | 6561 | not attempted (smaller size already exceeded the cap)
+
+SKF max |error| = Scikit-Fuzzy vs our exact centroid (its sampled-universe error).
+====================================================================================================
+limitation_C_fixed.py - Limitation C + fix: out-of-range input, no rule fires
+Status: OK | run time 3.2 s
+====================================================================================================
+--- C1: Outside universe ---
+Output: {'Tip': np.float64(17.289821709356293)}
+Ours (strict): FuzzyInferenceError - input Service=15.0 is outside its universe of discourse [0, 10]
+
+--- C2: No rule fires ---
+WARNING: the sum of rules' firing for variable 'Output' is equal to 0. The result of the Mamdani inference was set to 0.
+Output: {'Output': 0}
+Ours (strict): FuzzyInferenceError - no rule fires for output 'Output'
+
+--- C3: Conflicting rules ---
+Output: {'Tip': np.float64(13.124216911432333)}
+Ours (strict): {'Tip': np.float64(13.125)}
+
+====================================================================================================
+temperature_control_mamdani.py - Second Mamdani system: fan control
+Status: OK | run time 12.7 s
+====================================================================================================
+=== temperature_control_mamdani.py
+
+Time = mean ± sd over 5 runs of 20 calls (common.time_ms)
+Inputs | Rules | Simpful time | Ours time | Speed-up | Simpful max |error| | Ours max |error|
+----------------------------------------------------------------------------------------------------
+Temperature + Humidity | 9 | 16.964 ± 1.188 ms | 0.682 ± 0.013 ms | 24.9x | 0.034560 | 1.39e-10
+
+Representative input
+Temperature = 29, Humidity = 60
+High-resolution reference: 61.259560
+Simpful (1000 subdivisions): 61.281058
+Ours (exact): 61.259560
+
+Reference: independent 1,000,001-point centroid integration over 56 input combinations.
+
+====================================================================================================
+benchmark_sepsis_sugeno.py - Sugeno system: sepsis speed and equivalence
+Status: OK | run time 10.1 s
+====================================================================================================
+=== benchmark_sepsis_sugeno.py
+
+Model | Test inputs | Simpful result | Ours result | Max |difference|
+--------------------------------------------------------------------------------
+Sepsis Sugeno | 10001 | 68.903242 | 68.903242 | 0.00e+00
+
+Time = mean ± sd over 5 runs of 2000 calls (common.time_ms)
+Method | Time | Speed-up
+----------------------------------------
+Simpful Sugeno | 0.3502 ± 0.0128 ms | -
+Ours (fast_sugeno) | 0.0240 ± 0.0010 ms | 14.6x
+
+Correctness: independent analytic reference; max error was 1.42e-14.
+Paper reports 69.3%; Simpful 2.12.0 and ours both give the value above.
+Scope: computational equivalence only, not clinical validation.
+
+====================================================================================================
+ablation.py - Ablation: remove one component of the fix at a time
+Status: OK | run time 539.3 s
+====================================================================================================
+=== ablation.py
+
+Remove one component at a time from the full fix.
+Tipping: max error over 121 inputs; time at (4, 8), mean ± sd over 5 runs of 10 calls.
+Random rule bases: mean ± sd over 5 seeds (each seed: warm-up + 3 runs).
+
+Configuration | Tipping max error | Tipping time | 4 inputs (81 rules) | 6 inputs (729 rules) | 8 inputs (6561 rules)
+------------------------------------------------------------------------------------------------------------------------
+Simpful (baseline) | 1.14e-02 | 11.226 ± 2.868 ms | 232.7 ± 54.8 ms | 1691.6 ± 433.2 ms | 16191.4 ± 1441.5 ms
+Full fix | 2.08e-11 | 0.755 ± 0.050 ms | 0.7 ± 0.0 ms | 1.3 ± 0.3 ms | 1.8 ± 0.4 ms
+- active | 2.08e-11 | 0.882 ± 0.118 ms | 1.3 ± 0.3 ms | 5.5 ± 0.5 ms | 44.4 ± 3.8 ms
+- cache | 2.08e-11 | 0.810 ± 0.020 ms | 2.8 ± 0.1 ms | 13.5 ± 0.4 ms | 71.8 ± 5.3 ms
+- merge | 2.08e-11 | 0.751 ± 0.050 ms | 2.5 ± 0.4 ms | 10.1 ± 0.4 ms | 98.8 ± 4.3 ms
+- exact (NumPy grid) | 1.14e-02 | 0.701 ± 0.085 ms | 0.8 ± 0.1 ms | 1.5 ± 0.2 ms | 3.0 ± 0.7 ms
+- exact - vector (loop) | 1.14e-02 | 7.068 ± 0.372 ms | 7.1 ± 0.5 ms | 6.2 ± 0.3 ms | 7.8 ± 1.3 ms
+- merge - exact (grid) | 1.14e-02 | 0.218 ± 0.017 ms | 0.8 ± 0.1 ms | 2.8 ± 0.8 ms | 18.7 ± 7.8 ms
+
+Note: '- merge' and '- exact' interact. Without merge, the exact centroid
+compares every pair of output sets (one per rule), so its cost grows with
+rules^2; the '- merge - exact' row shows merge's effect on the grid method.
+
+====================================================================================================
+ablation_mamdani_vs_sugeno.py - Ablation: Mamdani vs Sugeno on the same rule base (proposal)
+Status: OK | run time 491.5 s
+====================================================================================================
+=== ablation_mamdani_vs_sugeno.py
+
+Seeds: 5 | Simpful Mamdani at 1000 subdivisions | time = mean ± sd over seeds (each seed: warm-up + 3 runs)
+Inputs | Rules | Simpful Mamdani | Simpful Sugeno | Simpful defuzz share | Ours Mamdani | Ours Sugeno | Mean |Mamdani - Sugeno|
+------------------------------------------------------------------------------------------------------------------------
+2 | 9 | 17.80 ± 2.14 ms | 0.54 ± 0.07 ms | 97% | 0.66 ± 0.06 ms | 0.02 ± 0.00 ms | 1.285
+4 | 81 | 143.48 ± 6.69 ms | 11.44 ± 2.75 ms | 92% | 0.87 ± 0.48 ms | 0.34 ± 0.23 ms | 2.137
+6 | 729 | 1688.09 ± 194.40 ms | 200.43 ± 26.91 ms | 88% | 1.05 ± 0.11 ms | 4.08 ± 0.74 ms | 1.711
+8 | 6561 | 14649.39 ± 404.13 ms | 1998.40 ± 44.37 ms | 86% | 1.45 ± 0.10 ms | 40.16 ± 2.74 ms | 1.420
+
+Simpful defuzz share = (Simpful Mamdani - Simpful Sugeno) / Simpful Mamdani: the part of Simpful's Mamdani time spent on the defuzzification grid.
+
+====================================================================================================
+test_fast_mamdani.py - Tests: grid mode = Simpful, exact mode = reference, fast_sugeno = Simpful
+Status: OK | run time 29.2 s
+====================================================================================================
+=== test_fast_mamdani.py
+
+Seed 20261111. PASS if max |difference| < tolerance.
+
+Test | Max |difference| | Tolerance | Result
+----------------------------------------------------------------------------------------------------
+T1 grid mode = Simpful, tipping (100 inputs x n=10,100,1000) | 4.09e-14 | 1e-09 | PASS
+T1 grid mode = Simpful, fan control (100 inputs x 3 n) | 1.28e-13 | 1e-09 | PASS
+T1 grid mode = Simpful, random 81-rule FIS (20 inputs x 3 n) | 1.07e-14 | 1e-09 | PASS
+T2 exact mode = reference, tipping (100 inputs) | 9.30e-12 | 1e-08 | PASS
+T3 exact mode = reference, fan control (100 inputs) | 1.92e-10 | 1e-08 | PASS
+T4 fast_sugeno = Simpful, sepsis (1000 inputs) | 0.00e+00 | 1e-09 | PASS
+T5 active=True = active=False, random FIS 2/4/6 inputs (90 inputs) | 0.00e+00 | 1e-09 | PASS
+T6 weights='average' = weighted average (3 cases) and = Simpful when unweighted (200 inputs) | 0.00e+00 | 1e-09 | PASS
+
+All tests passed.
+
+====================================================================================================
+findings_checks.py - Findings: Sugeno rule weights (with fix), sepsis membership labels
+Status: OK | run time 2.0 s
+====================================================================================================
+=== findings_checks.py
+
+F1 - Sugeno rule weights (input X = 0, so every rule fires with strength 1)
+Case | Simpful | Weighted average | Numerator-only weighting | Simpful matches | Fixed (fast_sugeno weights='average')
+----------------------------------------------------------------------------------------------------
+One rule, weight 0.5 | 5.0000 | 10.0000 | 5.0000 | numerator-only | 10.0000 (OK)
+One rule, weight 1.0 (control) | 10.0000 | 10.0000 | 10.0000 | weighted average | 10.0000 (OK)
+Two rules, weights 0.5 and 1.0 | 12.5000 | 16.6667 | 12.5000 | numerator-only | 16.6667 (OK)
+If the weight-0.5 rows say 'numerator-only', Simpful's weighted Sugeno output
+is not a weighted average: a single rule with weight 0.5 halves its output.
+The last column is our fix: the weight scales the firing strength in both the
+numerator and the denominator, as Simpful's own Mamdani inference does (F1b).
+
+F1b - Mamdani rule weights (single rule, X = 0)
+Weight | Simpful (1000 subdivisions) | Ours (exact)
+------------------------------------------------------------
+1.0 | 3.329997 | 3.333333
+0.5 | 3.886293 | 3.888889
+A single clipped triangle (0,0,10) has centroid 10/3 = 3.3333 at weight 1.
+Lower clip levels move the centroid right; Simpful and ours should agree.
+
+F2 - Sepsis membership labels (Listing 3)
+Variable | value | 'low' membership | 'high' membership
+----------------------------------------------------------------------
+PaO2 | 10 | 0.047 | 0.953
+PaO2 | 70 | 0.953 | 0.047
+Trombocytes | 20 | 0.000 | 1.000
+Trombocytes | 80 | 1.000 | 0.000
+Creatinine | 100 | 0.000 | 1.000
+Creatinine | 500 | 1.000 | 0.000
+If 'low' is near 0 at the low value and near 1 at the high value, the labels
+are inverted relative to the shapes (Sigmoid_MF increases with x).
+
+Creatinine: max |low + high - 1| over 0..600 = 0.150 (at 289); the two terms do not form a partition.
+
+====================================================================================================
+sepsis_corrected.py - Fix for F2: sepsis model with labels matching their shapes
+Status: OK | run time 12.4 s
+====================================================================================================
+=== sepsis_corrected.py
+
+Label check: 'low' membership at a clearly LOW / clearly HIGH value (correct labels: near 1 / near 0)
+Version | PaO2 10 / 70 | Trombocytes 20 / 80 | Creatinine 100 / 500 | Creatinine max |low + high - 1|
+--------------------------------------------------------------------------------------------------------------
+original | 0.047 / 0.953 | 0.000 / 1.000 | 0.000 / 1.000 | 0.150
+labels fixed | 0.953 / 0.047 | 1.000 / 0.000 | 1.000 / 0.000 | 0.150
+labels + partition | 0.953 / 0.047 | 1.000 / 0.000 | 1.000 / 0.000 | 0.000
+
+Output at the paper's input (PaO2 50, BaseExcess -1.5, Trombocytes 50, Creatinine 320); paper reports 69.3
+original | 68.90%
+labels fixed | 7.14%
+labels + partition | 31.10%
+
+Change vs the original over 10,000 random inputs
+Version | Mean |change| | Max |change| | Crosses 50% (other side)
+--------------------------------------------------------------------------------
+labels fixed | 76.39 | 98.00 | 78.2%
+labels + partition | 76.90 | 98.00 | 80.1%
+
+Scope: labels fixed so they match their shapes; not a clinical validation.

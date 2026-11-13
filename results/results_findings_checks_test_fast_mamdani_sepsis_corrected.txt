@@ -1,0 +1,99 @@
+AICC5102 Simpful project - combined results
+Date: 2026-11-12 22:18
+Python 3.14.2 on Windows AMD64
+CPU: Intel64 Family 6 Model 142 Stepping 10, GenuineIntel
+simpful 2.12.0
+scikit-fuzzy 0.5.0
+numpy 2.4.4
+matplotlib 3.10.8
+
+Summary
+OK          29.2 s  test_fast_mamdani.py
+OK           2.0 s  findings_checks.py
+OK          12.4 s  sepsis_corrected.py
+
+====================================================================================================
+test_fast_mamdani.py - Tests: grid mode = Simpful, exact mode = reference, fast_sugeno = Simpful
+Status: OK | run time 29.2 s
+====================================================================================================
+=== test_fast_mamdani.py
+
+Seed 20261111. PASS if max |difference| < tolerance.
+
+Test | Max |difference| | Tolerance | Result
+----------------------------------------------------------------------------------------------------
+T1 grid mode = Simpful, tipping (100 inputs x n=10,100,1000) | 4.09e-14 | 1e-09 | PASS
+T1 grid mode = Simpful, fan control (100 inputs x 3 n) | 1.28e-13 | 1e-09 | PASS
+T1 grid mode = Simpful, random 81-rule FIS (20 inputs x 3 n) | 1.07e-14 | 1e-09 | PASS
+T2 exact mode = reference, tipping (100 inputs) | 9.30e-12 | 1e-08 | PASS
+T3 exact mode = reference, fan control (100 inputs) | 1.92e-10 | 1e-08 | PASS
+T4 fast_sugeno = Simpful, sepsis (1000 inputs) | 0.00e+00 | 1e-09 | PASS
+T5 active=True = active=False, random FIS 2/4/6 inputs (90 inputs) | 0.00e+00 | 1e-09 | PASS
+T6 weights='average' = weighted average (3 cases) and = Simpful when unweighted (200 inputs) | 0.00e+00 | 1e-09 | PASS
+
+All tests passed.
+
+====================================================================================================
+findings_checks.py - Findings: Sugeno rule weights (with fix), sepsis membership labels
+Status: OK | run time 2.0 s
+====================================================================================================
+=== findings_checks.py
+
+F1 - Sugeno rule weights (input X = 0, so every rule fires with strength 1)
+Case | Simpful | Weighted average | Numerator-only weighting | Simpful matches | Fixed (fast_sugeno weights='average')
+----------------------------------------------------------------------------------------------------
+One rule, weight 0.5 | 5.0000 | 10.0000 | 5.0000 | numerator-only | 10.0000 (OK)
+One rule, weight 1.0 (control) | 10.0000 | 10.0000 | 10.0000 | weighted average | 10.0000 (OK)
+Two rules, weights 0.5 and 1.0 | 12.5000 | 16.6667 | 12.5000 | numerator-only | 16.6667 (OK)
+If the weight-0.5 rows say 'numerator-only', Simpful's weighted Sugeno output
+is not a weighted average: a single rule with weight 0.5 halves its output.
+The last column is our fix: the weight scales the firing strength in both the
+numerator and the denominator, as Simpful's own Mamdani inference does (F1b).
+
+F1b - Mamdani rule weights (single rule, X = 0)
+Weight | Simpful (1000 subdivisions) | Ours (exact)
+------------------------------------------------------------
+1.0 | 3.329997 | 3.333333
+0.5 | 3.886293 | 3.888889
+A single clipped triangle (0,0,10) has centroid 10/3 = 3.3333 at weight 1.
+Lower clip levels move the centroid right; Simpful and ours should agree.
+
+F2 - Sepsis membership labels (Listing 3)
+Variable | value | 'low' membership | 'high' membership
+----------------------------------------------------------------------
+PaO2 | 10 | 0.047 | 0.953
+PaO2 | 70 | 0.953 | 0.047
+Trombocytes | 20 | 0.000 | 1.000
+Trombocytes | 80 | 1.000 | 0.000
+Creatinine | 100 | 0.000 | 1.000
+Creatinine | 500 | 1.000 | 0.000
+If 'low' is near 0 at the low value and near 1 at the high value, the labels
+are inverted relative to the shapes (Sigmoid_MF increases with x).
+
+Creatinine: max |low + high - 1| over 0..600 = 0.150 (at 289); the two terms do not form a partition.
+
+====================================================================================================
+sepsis_corrected.py - Fix for F2: sepsis model with labels matching their shapes
+Status: OK | run time 12.4 s
+====================================================================================================
+=== sepsis_corrected.py
+
+Label check: 'low' membership at a clearly LOW / clearly HIGH value (correct labels: near 1 / near 0)
+Version | PaO2 10 / 70 | Trombocytes 20 / 80 | Creatinine 100 / 500 | Creatinine max |low + high - 1|
+--------------------------------------------------------------------------------------------------------------
+original | 0.047 / 0.953 | 0.000 / 1.000 | 0.000 / 1.000 | 0.150
+labels fixed | 0.953 / 0.047 | 1.000 / 0.000 | 1.000 / 0.000 | 0.150
+labels + partition | 0.953 / 0.047 | 1.000 / 0.000 | 1.000 / 0.000 | 0.000
+
+Output at the paper's input (PaO2 50, BaseExcess -1.5, Trombocytes 50, Creatinine 320); paper reports 69.3
+original | 68.90%
+labels fixed | 7.14%
+labels + partition | 31.10%
+
+Change vs the original over 10,000 random inputs
+Version | Mean |change| | Max |change| | Crosses 50% (other side)
+--------------------------------------------------------------------------------
+labels fixed | 76.39 | 98.00 | 78.2%
+labels + partition | 76.90 | 98.00 | 80.1%
+
+Scope: labels fixed so they match their shapes; not a clinical validation.

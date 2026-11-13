@@ -1,0 +1,15 @@
+=== benchmark_sepsis_sugeno.py
+
+Model | Test inputs | Simpful result | Ours result | Max |difference|
+--------------------------------------------------------------------------------
+Sepsis Sugeno | 10001 | 68.903242 | 68.903242 | 0.00e+00
+
+Time = mean ± sd over 5 runs of 2000 calls (common.time_ms)
+Method | Time | Speed-up
+----------------------------------------
+Simpful Sugeno | 0.3502 ± 0.0128 ms | -
+Ours (fast_sugeno) | 0.0240 ± 0.0010 ms | 14.6x
+
+Correctness: independent analytic reference; max error was 1.42e-14.
+Paper reports 69.3%; Simpful 2.12.0 and ours both give the value above.
+Scope: computational equivalence only, not clinical validation.

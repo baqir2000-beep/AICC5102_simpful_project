@@ -1,0 +1,6 @@
+simpful==2.12.0
+scikit-fuzzy==0.5.0
+numpy==2.4.4
+matplotlib==3.10.8
+setuptools<81  # Simpful's start-up banner imports pkg_resources, removed from newer setuptools
+pytest  # optional: pytest test_fast_mamdani.py
