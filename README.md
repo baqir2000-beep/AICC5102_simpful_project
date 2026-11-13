@@ -235,8 +235,6 @@ Each version is installed in a temporary virtual environment (with NumPy < 2, wh
 | Syed Baqir (60323165) | Scalability benchmark (`limitation_B_fixed.py`, `limitation_B_skfuzzy.py`), Sugeno benchmark, ablations (`ablation.py`, `ablation_mamdani_vs_sugeno.py`), tests (`test_fast_mamdani.py`), statistics and plots |
 | All | `fast_mamdani.py` / `fast_sugeno.py` design and review, related work, paper, peer review |
 
-*Edit this table so it matches who actually did what before submitting.*
-
 ## AI use statement
 
 Claude (Anthropic) was used to help write `fast_mamdani.py`, `common.py`, `ablation.py`, `run_all.py`, `test_fast_mamdani.py`, `findings_checks.py`, `sepsis_version_check.py`, `check_old_simpful.sh`, `limitation_A_harder.py`, `limitation_B_skfuzzy.py`, `ablation_mamdani_vs_sugeno.py` and `sepsis_corrected.py`, to add the active-rule lookup to `fast_mamdani.py` and the rule-weight fix to `fast_sugeno.py`, to adapt the test scripts to the common timing method, and to draft this README. The team reviewed, ran and verified all code and results.
