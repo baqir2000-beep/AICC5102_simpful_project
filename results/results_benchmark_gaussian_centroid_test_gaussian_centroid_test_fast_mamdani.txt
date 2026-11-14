@@ -1,0 +1,82 @@
+AICC5102 Simpful project - combined results
+Date: 2026-11-14 01:22
+Python 3.11.9 on Windows AMD64
+CPU: Intel64 Family 6 Model 186 Stepping 3, GenuineIntel
+simpful 2.12.0
+scikit-fuzzy (not found)
+numpy 2.4.6
+scipy 1.17.1
+matplotlib 3.11.2
+
+Summary
+OK         107.3 s  benchmark_gaussian_centroid.py
+OK          17.8 s  test_fast_mamdani.py
+OK           2.2 s  test_gaussian_centroid.py
+
+====================================================================================================
+benchmark_gaussian_centroid.py - Gaussian centroid: runtime, accuracy, narrow peaks and crossing ablation
+Status: OK | run time 107.3 s
+====================================================================================================
+Case group | Method | Cases | Max error | Mean error | Mean ± SD per inference
+Gaussian tipping | Simpful 1,000 | 121 | 3.000e-03 | 1.198e-03 | 6.663 ± 0.270 ms
+Gaussian tipping | Simpful 10,000 | 121 | 3.007e-04 | 1.195e-04 | 67.037 ± 1.323 ms
+Gaussian tipping | Dense grid | 121 | 6.159e-10 | 1.995e-10 | 15.336 ± 0.796 ms
+Gaussian tipping | Analytic | 121 | 1.975e-12 | 2.624e-13 | 0.060 ± 0.001 ms
+Gaussian tipping | Without crossings | 121 | 1.927e+00 | 1.172e-01 | 0.056 ± 0.001 ms
+Narrow peaks | Simpful 1,000 | 21 | 3.527e+00 | 2.480e+00 | 4.638 ± 0.060 ms
+Narrow peaks | Simpful 10,000 | 21 | 1.239e-02 | 6.619e-03 | 47.500 ± 2.053 ms
+Narrow peaks | Dense grid | 21 | 6.668e-05 | 4.582e-05 | 14.567 ± 0.139 ms
+Narrow peaks | Analytic | 21 | 1.581e-13 | 8.958e-14 | 0.051 ± 0.001 ms
+Narrow peaks | Without crossings | 21 | 3.609e-01 | 3.605e-01 | 0.043 ± 0.000 ms
+Overlapping bells | Simpful 1,000 | 12 | 7.829e-05 | 3.102e-05 | 4.757 ± 0.075 ms
+Overlapping bells | Simpful 10,000 | 12 | 7.909e-06 | 3.176e-06 | 44.645 ± 0.581 ms
+Overlapping bells | Dense grid | 12 | 9.673e-11 | 3.756e-11 | 12.378 ± 0.384 ms
+Overlapping bells | Analytic | 12 | 4.103e-13 | 1.205e-13 | 0.042 ± 0.004 ms
+Overlapping bells | Without crossings | 12 | 2.946e-01 | 8.787e-02 | 0.037 ± 0.004 ms
+
+====================================================================================================
+test_fast_mamdani.py - Tests: grid mode = Simpful, exact mode = reference, fast_sugeno = Simpful
+Status: OK | run time 17.8 s
+====================================================================================================
+=== test_fast_mamdani.py
+
+Seed 20261111. PASS if max |difference| < tolerance.
+
+Test | Max |difference| | Tolerance | Result
+----------------------------------------------------------------------------------------------------
+T1 grid mode = Simpful, tipping (100 inputs x n=10,100,1000) | 2.84e-13 | 1e-09 | PASS
+T1 grid mode = Simpful, fan control (100 inputs x 3 n) | 1.17e-12 | 1e-09 | PASS
+T1 grid mode = Simpful, random 81-rule FIS (20 inputs x 3 n) | 2.88e-13 | 1e-09 | PASS
+T2 exact mode = reference, tipping (100 inputs) | 9.30e-12 | 1e-08 | PASS
+T3 exact mode = reference, fan control (100 inputs) | 1.92e-10 | 1e-08 | PASS
+T4 fast_sugeno = Simpful, sepsis (1000 inputs) | 0.00e+00 | 1e-09 | PASS
+T5 active=True = active=False, random FIS 2/4/6 inputs (90 inputs) | 0.00e+00 | 1e-09 | PASS
+T6 weights='average' = weighted average (3 cases) and = Simpful when unweighted (200 inputs) | 0.00e+00 | 1e-09 | PASS
+
+All tests passed.
+
+====================================================================================================
+test_gaussian_centroid.py - Tests: analytic Gaussian centroid and integration with Simpful
+Status: OK | run time 2.2 s
+====================================================================================================
+
+
+STDERR:
+test_asymmetric_narrow_case_through_simpful (__main__.GaussianCentroidTests.test_asymmetric_narrow_case_through_simpful) ... ok
+test_crossing_ablation_changes_asymmetric_overlap (__main__.GaussianCentroidTests.test_crossing_ablation_changes_asymmetric_overlap) ... ok
+test_mixed_output_retains_grid (__main__.GaussianCentroidTests.test_mixed_output_retains_grid) ... ok
+test_overlap_crossings_against_independent_quadrature (__main__.GaussianCentroidTests.test_overlap_crossings_against_independent_quadrature) ... C:\Users\Abdullah Mahmood\Documents\ChatGPT\AICC\work\simpful_gaussian_update\benchmark_gaussian_centroid.py:68: IntegrationWarning: The occurrence of roundoff error is detected, which prevents 
+  the requested tolerance from being achieved.  The error may be 
+  underestimated.
+  area = quad(envelope, lower, upper, **options)[0]
+C:\Users\Abdullah Mahmood\Documents\ChatGPT\AICC\work\simpful_gaussian_update\benchmark_gaussian_centroid.py:70: IntegrationWarning: The occurrence of roundoff error is detected, which prevents 
+  the requested tolerance from being achieved.  The error may be 
+  underestimated.
+  moment = quad(lambda x: (x - center) * envelope(x), lower, upper, **options)[0]
+ok
+test_symmetric_clipped_bell (__main__.GaussianCentroidTests.test_symmetric_clipped_bell) ... ok
+
+----------------------------------------------------------------------
+Ran 5 tests in 0.686s
+
+OK

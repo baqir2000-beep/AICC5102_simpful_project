@@ -3,7 +3,7 @@
 Time = mean ± sd over 5 runs of 20 calls (common.time_ms)
 Inputs | Rules | Simpful time | Ours time | Speed-up | Simpful max |error| | Ours max |error|
 ----------------------------------------------------------------------------------------------------
-Temperature + Humidity | 9 | 16.964 ± 1.188 ms | 0.682 ± 0.013 ms | 24.9x | 0.034560 | 1.39e-10
+Temperature + Humidity | 9 | 6.484 ± 0.058 ms | 0.192 ± 0.004 ms | 33.8x | 0.034560 | 1.39e-10
 
 Representative input
 Temperature = 29, Humidity = 60

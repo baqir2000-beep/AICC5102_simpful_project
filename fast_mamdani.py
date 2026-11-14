@@ -16,7 +16,7 @@ switched off for the ablation study):
            OR, NOT or a repeated variable are always evaluated normally. Skipped rules
            have firing strength exactly 0, so the result is unchanged.
            (Skipping non-active rules is known from fuzzy hardware, e.g. Chen et al.,
-           "High-Speed Fuzzy Inference Processor Using Active Rules Identification",
+           "High-Speed Fuzzy Inference Parocessor Using Active Rules Identification",
            JCIS 2006; Simpful does not do it.)
   cache  : each input's memberships are computed once per inference (Simpful
            recomputes them for every clause of every rule) and AND/OR/NOT are applied
@@ -27,9 +27,9 @@ switched off for the ablation study):
            fire are dropped.
   exact  : for piecewise-linear output sets (triangular, trapezoidal, point-based) the
            centroid is integrated exactly between breakpoints, clip levels and line
-           crossings (the same idea as PyFuzzy's polygon centroid). Non-linear output
-           sets (Gaussian, sigmoid) fall back to a 200,001-point grid with the
-           trapezoidal rule (not exact, but far finer than Simpful's default).
+           crossings (the same idea as PyFuzzy's polygon centroid). A pure Gaussian
+           output uses analytic integration of its clipped upper envelope. Mixed or
+           other nonlinear outputs use the fine trapezoidal grid.
   vector : NumPy arrays instead of Python loops when a grid is used.
 With exact=False the grid result equals Simpful's (checked in test_fast_mamdani.py).
 Robustness option: strict=True raises an error for inputs outside the universe of
@@ -39,8 +39,10 @@ import itertools
 import math
 
 import numpy as np
-from simpful.fuzzy_sets import Triangular_MF, Trapezoidal_MF
+from simpful.fuzzy_sets import Gaussian_MF, Triangular_MF, Trapezoidal_MF
 from simpful.rule_parsing import Clause, Functional
+
+from gaussian_centroid import gaussian_centroid
 
 _OPS = {"AND": min, "OR": max, "AND_p": lambda a, b: a * b, "OR_p": lambda a, b: a + b - a * b}
 _trapz = getattr(np, "trapezoid", None) or np.trapz
@@ -191,6 +193,19 @@ def _check_inputs(FS):
                 raise FuzzyInferenceError(f"input {name}={val} is outside its universe of discourse [{lo}, {hi}]")
 
 
+def _gaussian_terms(fsets):
+    terms = []
+    for fs, strength in fsets:
+        if strength <= 0:
+            continue
+        mf = getattr(fs, "_funpointer", None)
+        if (type(mf) is not Gaussian_MF or not math.isfinite(mf._mu)
+                or not math.isfinite(mf._sigma) or mf._sigma <= 0):
+            return None
+        terms.append((strength, mf._mu, mf._sigma))
+    return terms
+
+
 # ---------- exact centroid of max_k min(w_k, mu_k(x)) for piecewise-linear mu_k ----------
 def _exact_centroid(sets, x0, x1):
     """sets: list of (w, bx, by). Returns (area, first moment)."""
@@ -223,7 +238,9 @@ def _exact_centroid(sets, x0, x1):
 
 # ---------- main entry point ----------
 def fast_mamdani(FS, terms, subdivisions=1000, merge=True, vector=True, exact=True,
-                 cache=True, active=True, strict=False):
+                 cache=True, active=True, strict=False, *, analytic_gaussian=True,
+                 gaussian_crossings=True):
+    """Infer outputs. Gaussian switches isolate the former grid and crossing ablation."""
     if strict:
         _check_inputs(FS)
     out = {}
@@ -248,11 +265,16 @@ def fast_mamdani(FS, terms, subdivisions=1000, merge=True, vector=True, exact=Tr
             out[output] = 0.0; continue
         fsets = [(lv._FSlist[lv.get_index(t)], v) for t, v in fired]
         # 2) centroid
+        gaussians = _gaussian_terms(fsets) if exact and analytic_gaussian else None
+        if gaussians:
+            out[output] = gaussian_centroid(gaussians, x0, x1,
+                                            include_crossings=gaussian_crossings)
+            continue
         verts = [_pl_vertices(fs, x0, x1) for fs, _ in fsets] if exact else None
         if exact and all(v is not None for v in verts):
             area, mom = _exact_centroid([(w, *v) for (_, w), v in zip(fsets, verts)], x0, x1)
             out[output] = mom / area
-        elif vector and exact:   # non-linear output sets: fine grid, trapezoidal rule
+        elif vector and exact:   # unsupported nonlinear outputs: fine trapezoidal grid
             x = np.linspace(x0, x1, 200001)
             agg = np.max([np.minimum(w, _eval_set(fs, x, x0, x1)) for fs, w in fsets], axis=0)
             out[output] = float(_trapz(agg * x, x) / _trapz(agg, x))

@@ -10,8 +10,8 @@ For each variant we report, over the same 121 inputs as limitation_A_fixed.py, t
 max and mean error of Simpful (100, 1000, 10000 subdivisions) and of fast_mamdani
 against a 1,000,001-point trapezoidal reference, plus the time at input (4, 8).
 
-For narrow sets fast_mamdani is exact. For Gaussian/sigmoid sets it is NOT exact:
-it falls back to a 200,001-point grid with the trapezoidal rule.
+For narrow polygonal sets and pure Gaussian outputs, fast_mamdani uses direct
+integration. Mixed sigmoid/Gaussian outputs use the 200,001-point fallback.
 """
 import numpy as np
 from simpful import (FuzzySet, FuzzySystem, LinguisticVariable, Gaussian_MF,
@@ -131,7 +131,7 @@ if __name__ == "__main__":
         worst, mean = errors(FS, refs, lambda: fast_mamdani(FS, ["Tip"])["Tip"])
         FS.set_variable("Service", 4); FS.set_variable("Food", 8)
         t = time_ms(lambda: fast_mamdani(FS, ["Tip"]), calls=10)
-        label = "Ours (exact)" if variant.startswith("narrow") else "Ours (200,001-point grid)"
+        label = ("Ours (200,001-point grid)" if variant.startswith("sigmoid")
+                 else "Ours (analytic integration)")
         print(f"{label} | {worst:.2e} | {mean:.2e} | {fmt(*t[:2])}\n")
-    print("Note: for Gaussian/sigmoid sets 'Ours' is a fine grid, not exact; its error "
-          "is bounded by the reference's own accuracy (~1e-9).")
+    print("The reference is numerical. Mixed sigmoid/Gaussian outputs use the fine grid.")

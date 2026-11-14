@@ -26,14 +26,15 @@ SCRIPTS = [
     ("figure4_test.py",                "Reproduction: Fig. 4, Simpful vs Scikit-Fuzzy surface"),
     ("limitation_A_fixed.py",          "Limitation A + fix: accuracy (1 input and 121 inputs)"),
     ("limitation_A_harder.py",         "Limitation A, harder conditions: narrow and Gaussian/sigmoid output sets"),
+    ("benchmark_gaussian_centroid.py", "Gaussian centroid: runtime, accuracy, narrow peaks and crossing ablation"),
     ("limitation_B_fixed.py",          "Limitation B + fix: speed with 9 to 6561 rules"),
     ("limitation_B_skfuzzy.py",        "Limitation B: Scikit-Fuzzy on the same rule bases"),
-    ("limitation_C_fixed.py",          "Limitation C + fix: out-of-range input, no rule fires"),
     ("temperature_control_mamdani.py", "Second Mamdani system: fan control"),
     ("benchmark_sepsis_sugeno.py",     "Sugeno system: sepsis speed and equivalence"),
     ("ablation.py",                    "Ablation: remove one component of the fix at a time"),
     ("ablation_mamdani_vs_sugeno.py",  "Ablation: Mamdani vs Sugeno on the same rule base (proposal)"),
     ("test_fast_mamdani.py",           "Tests: grid mode = Simpful, exact mode = reference, fast_sugeno = Simpful"),
+    ("test_gaussian_centroid.py",       "Tests: analytic Gaussian centroid and integration with Simpful"),
     ("findings_checks.py",             "Findings: Sugeno rule weights (with fix), sepsis membership labels"),
     ("sepsis_corrected.py",            "Fix for F2: sepsis model with labels matching their shapes"),
 ]
@@ -73,14 +74,15 @@ def main():
         seconds = time.perf_counter() - start
         status = "OK" if proc.returncode == 0 else f"FAILED (exit {proc.returncode})"
         output = clean(proc.stdout)
-        if proc.returncode != 0:
-            output += "\n\nERROR OUTPUT:\n" + proc.stderr.strip()
+        if proc.stderr.strip():
+            output += "\n\nSTDERR:\n" + proc.stderr.strip()
         sections.append(f"{'=' * 100}\n{script} - {description}\n"
                         f"Status: {status} | run time {seconds:.1f} s\n{'=' * 100}\n{output}\n")
         summary.append(f"{status:<8} {seconds:7.1f} s  {script}")
         print(f"  {status} in {seconds:.1f} s", flush=True)
         write_results(out, env_info, summary, sections)   # save after every script
     print(f"\nWrote {out}")
+    return int(any(entry.startswith("FAILED") for entry in summary))
 
 
 def write_results(out, env_info, summary, sections):
@@ -115,7 +117,7 @@ def environment_info():
              f"Date: {time.strftime('%Y-%m-%d %H:%M')}",
              f"Python {platform.python_version()} on {platform.system()} {platform.machine()}",
              f"CPU: {cpu_name()}"]
-    for package in ("simpful", "scikit-fuzzy", "numpy", "matplotlib"):
+    for package in ("simpful", "scikit-fuzzy", "numpy", "scipy", "matplotlib"):
         try:
             lines.append(f"{package} {version(package)}")
         except Exception:
@@ -124,4 +126,4 @@ def environment_info():
 
 
 if __name__ == "__main__":
-    main()
+    sys.exit(main())
