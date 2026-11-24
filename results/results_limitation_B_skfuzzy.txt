@@ -1,0 +1,29 @@
+AICC5102 Simpful project - combined results
+Date: 2026-11-24 23:26
+Python 3.11.9 on Windows AMD64
+CPU: Intel64 Family 6 Model 186 Stepping 3, GenuineIntel
+simpful 2.12.0
+scikit-fuzzy 0.5.0
+numpy 2.4.6
+scipy 1.17.1
+matplotlib 3.11.2
+
+Summary
+OK          49.9 s  limitation_B_skfuzzy.py
+
+====================================================================================================
+limitation_B_skfuzzy.py - Limitation B: Scikit-Fuzzy on the same rule bases
+Status: OK | run time 49.9 s
+====================================================================================================
+=== limitation_B_skfuzzy.py
+
+Seeds: 5 | time = mean ± sd over seeds (each seed: warm-up + 3 runs)
+Scikit-Fuzzy uses a preordered control graph; result caching is off.
+Inputs | Rules | Scikit-Fuzzy build | Scikit-Fuzzy time | Ours time | Speed-up (ours vs SKF) | SKF max |error|
+--------------------------------------------------------------------------------------------------------------
+2 | 9 | 0.00 s | 2.03 ± 0.05 ms | 0.61 ± 0.05 ms | 3.3x | 7.76e-06
+4 | 81 | 0.04 s | 4.83 ± 1.58 ms | 0.58 ± 0.31 ms | 8.3x | 2.70e-06
+6 | 729 | 0.51 s | 36.85 ± 8.76 ms | 0.57 ± 0.26 ms | 64.3x | 4.62e-06
+8 | 6561 | 5.78 s | 383.51 ± 15.99 ms | 1.17 ± 0.52 ms | 328.1x | 2.85e-06
+
+SKF max |error| = Scikit-Fuzzy vs our exact centroid (its sampled-universe error).

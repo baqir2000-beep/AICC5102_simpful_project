@@ -164,14 +164,23 @@ The benchmark produces `results/gaussian_centroid_summary.csv` and `results/gaus
 
 **Limitation B, speed (random full-grid rule bases, 5 seeds)**
 
-| Inputs | Rules | Simpful | Scikit-Fuzzy | Ours | Ours vs Simpful | Ours vs Scikit-Fuzzy |
-|---|---|---|---|---|---|---|
-| 2 | 9 | 21.5 ± 4.0 ms | 18.4 ± 10.3 ms | 0.82 ± 0.14 ms | 26× | 16× |
-| 4 | 81 | 166 ± 13 ms | 158 ± 20 ms (build 2.9 s) | 0.81 ± 0.22 ms | 206× | 269× |
-| 6 | 729 | 1,557 ± 160 ms | > 120 s per seed (build + 4 inferences) | 0.85 ± 0.04 ms | 1,836× | — |
-| 8 | 6,561 | 13,459 ± 2,868 ms | not attempted | 1.53 ± 0.25 ms | 8,783× | — |
+| Inputs | Rules | Simpful | Ours | Ours vs Simpful |
+|---|---|---|---|---|
+| 2 | 9 | 21.5 ± 4.0 ms | 0.82 ± 0.14 ms | 26× |
+| 4 | 81 | 166 ± 13 ms | 0.81 ± 0.22 ms | 206× |
+| 6 | 729 | 1,557 ± 160 ms | 0.85 ± 0.04 ms | 1,836× |
+| 8 | 6,561 | 13,459 ± 2,868 ms | 1.53 ± 0.25 ms | 8,783× |
 
-Simpful's time grows about 9× for every 9× more rules, i.e. in proportion to the rule count. Scikit-Fuzzy is similar to Simpful up to 81 rules but could not even build the 729-rule system within the time limit. Our time stays near 1 ms because at most 2ⁿ of the 3ⁿ rules can fire. Scikit-Fuzzy's error against the exact result: 7.8e-6 (9 rules), 2.7e-6 (81 rules). Peak memory: Simpful 0.07–0.89 MB, ours 0.01 MB.
+Simpful's time grows about 9× for every 9× more rules. At most 2ⁿ of the 3ⁿ rules can fire. Peak memory was 0.07–0.89 MB for Simpful and 0.01 MB for our method.
+
+Run only the uncapped comparison with `python run_all.py limitation_B_skfuzzy`. The [new results](results/results_limitation_B_skfuzzy.txt) use Python 3.11.9 and Scikit-Fuzzy 0.5.0. Each of the five seeds uses the same rule base and input for both methods, with one warm-up and three timed calls. Scikit-Fuzzy builds the fixed rule graph once per seed and reuses its rule order. Its inference evaluates every rule with result caching disabled. The earlier combined logs record their original capped runs.
+
+| Rules | Scikit-Fuzzy build | Scikit-Fuzzy inference | Our inference | Our speed-up | Max. output difference |
+|---|---:|---:|---:|---:|---:|
+| 9 | <0.01 s | 2.03 ± 0.05 ms | 0.61 ± 0.05 ms | 3.3× | 7.76e-6 |
+| 81 | 0.04 s | 4.83 ± 1.58 ms | 0.58 ± 0.31 ms | 8.3× | 2.70e-6 |
+| 729 | 0.51 s | 36.85 ± 8.76 ms | 0.57 ± 0.26 ms | 64.3× | 4.62e-6 |
+| 6,561 | 5.78 s | 383.51 ± 15.99 ms | 1.17 ± 0.52 ms | 328.1× | 2.85e-6 |
 
 **Other systems**
 
@@ -240,7 +249,7 @@ The Gaussian regression suite also passed five checks, including 36 randomized c
 - The paper's sepsis value (69.3) differs from Simpful 2.12.0 (68.90). An independent hand calculation agrees with 68.90. To test whether a version change explains it, run `bash check_old_simpful.sh <versions>` with versions from around October 2020 (see "Sepsis gap" below).
 - In Simpful 2.12, a Sugeno rule weight multiplies the numerator only, so weighted outputs are not weighted averages (confirmed by F1). `fast_sugeno` keeps this behaviour by default so outputs equal Simpful's; `weights="average"` is the fix.
 - The sepsis example's output depends strongly on the label fix (68.90% → 7.14% or 31.10% at the paper's input, and the conclusion flips for about 80% of random inputs), so the printed example is sensitive to the membership label assignment.
-- Scikit-Fuzzy could not be timed beyond 81 rules: building the 729-rule system plus 4 inferences took over 120 s per seed.
+- The Scikit-Fuzzy comparison uses a preordered rule graph for independent, single-stage rules.
 - Simpful 2.12.0's start-up banner needs `pkg_resources` (setuptools < 81), so the paper's example scripts fail on a fresh Python 3.14 install without that pin.
 - In Listing 3, the terms called "low" use an increasing sigmoid and "high" a decreasing one, and the two creatinine terms use different slopes, so they do not add up to 1. `findings_checks.py` (F2) prints the memberships at clearly low and high values.
 - The sepsis model is the paper's illustrative example, not clinically validated, and was not tested on patient data.

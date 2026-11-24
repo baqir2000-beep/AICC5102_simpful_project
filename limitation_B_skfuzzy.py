@@ -13,12 +13,10 @@ Fairness notes
   - Scikit-Fuzzy's result cache is switched off (cache=False); otherwise repeated
     calls with the same input would return a stored answer.
   - Inputs are set inside every timed call, as a user would do.
-  - Each seed (build + warm-up + timed runs) runs in its own process and is stopped
-    after TIME_CAP seconds. If a size hits the cap, larger sizes are not attempted
-    (they have 9x more rules each).
+  - The fixed, single-stage rule base has no intermediate terms. Build its
+    control graph once and reuse its rule order. Scikit-Fuzzy still evaluates
+    every rule and performs its own accumulation and defuzzification.
 """
-import multiprocessing as mp
-import queue
 import functools
 import operator
 import statistics
@@ -30,10 +28,21 @@ from skfuzzy import control as ctrl
 
 from common import time_ms
 from fast_mamdani import fast_mamdani
-from limitation_B_fixed import build_system, random_spec, input_counts, seeds
+from limitation_B_fixed import TIMED_RUNS, build_system, input_counts, random_spec, sd, seeds
 
-TIME_CAP = 120.0  # seconds per seed: build + warm-up + timed runs (both methods)
-TIMED_RUNS = 3
+
+class FixedRuleControlSystem(ctrl.ControlSystem):
+    """Scikit-Fuzzy controller for a fixed set of independent rules."""
+
+    def __init__(self, rules):
+        super().__init__()
+        self._ordered_rules = tuple(rules)
+        for rule in self._ordered_rules:
+            self.graph.update(rule.graph)
+
+    @property
+    def rules(self):
+        return iter(self._ordered_rules)
 
 
 def build_skfuzzy(num_inputs, seed):
@@ -53,7 +62,7 @@ def build_skfuzzy(num_inputs, seed):
                                         [antecedents[i][t] for i, t in enumerate(combination)]),
                        out[term])
              for combination, term in rule_spec]
-    simulation = ctrl.ControlSystemSimulation(ctrl.ControlSystem(rules), cache=False)
+    simulation = ctrl.ControlSystemSimulation(FixedRuleControlSystem(rules), cache=False)
 
     def run():
         for i, value in enumerate(inputs):
@@ -63,8 +72,7 @@ def build_skfuzzy(num_inputs, seed):
     return run
 
 
-def measure_seed(n, seed, results):
-    """Runs in a child process so it can be stopped at TIME_CAP."""
+def measure_seed(n, seed):
     start = time.perf_counter()
     run = build_skfuzzy(n, seed)
     build_s = time.perf_counter() - start
@@ -73,49 +81,20 @@ def measure_seed(n, seed, results):
     exact = fast_mamdani(FS, ["Output"])["Output"]
     t_skf = time_ms(run, runs=TIMED_RUNS, warmup=0)[0]
     t_ours = time_ms(lambda: fast_mamdani(FS, ["Output"]), runs=TIMED_RUNS)[0]
-    results.put((build_s, t_skf, t_ours, abs(skf_value - exact)))
-
-
-def run_with_cap(n, seed):
-    """(build_s, t_skf, t_ours, error), or None if the seed exceeded TIME_CAP."""
-    results = mp.Queue()
-    worker = mp.Process(target=measure_seed, args=(n, seed, results))
-    worker.start()
-    try:
-        return results.get(timeout=TIME_CAP)
-    except queue.Empty:
-        return None
-    finally:
-        if worker.is_alive():
-            worker.terminate()
-        worker.join()
+    return build_s, t_skf, t_ours, abs(skf_value - exact)
 
 
 if __name__ == "__main__":
     print("=== limitation_B_skfuzzy.py\n")
     print(f"Seeds: {len(seeds)} | time = mean ± sd over seeds "
-          f"(each seed: warm-up + {TIMED_RUNS} runs) | cap {TIME_CAP:.0f} s per seed")
+          f"(each seed: warm-up + {TIMED_RUNS} runs)")
+    print("Scikit-Fuzzy uses a preordered control graph; result caching is off.")
     print("Inputs | Rules | Scikit-Fuzzy build | Scikit-Fuzzy time | Ours time | "
           "Speed-up (ours vs SKF) | SKF max |error|")
     print("-" * 110)
-    sd = lambda v: statistics.stdev(v) if len(v) > 1 else 0.0
-    stop = False
     for n in input_counts:
         rules = 3 ** n
-        if stop:
-            print(f"{n} | {rules} | not attempted (smaller size already exceeded the cap)", flush=True)
-            continue
-        rows = []
-        for seed in seeds:
-            row = run_with_cap(n, seed)
-            if row is None:
-                print(f"{n} | {rules} | > {TIME_CAP:.0f} s for seed {seed} "
-                      f"(build + {TIMED_RUNS + 1} inferences); size skipped", flush=True)
-                stop = True
-                break
-            rows.append(row)
-        if stop:
-            continue
+        rows = [measure_seed(n, seed) for seed in seeds]
         build_s, t_skf, t_ours, errs = map(list, zip(*rows))
         print(f"{n} | {rules} | {statistics.mean(build_s):.2f} s | "
               f"{statistics.mean(t_skf):.2f} ± {sd(t_skf):.2f} ms | "
